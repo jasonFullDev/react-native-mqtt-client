@@ -310,7 +310,8 @@ class MqttClient : RCTEventEmitter {
     }
 
     // https://stackoverflow.com/a/38161889
-    override func invalidate() -> Void {
+    //override func invalidate() -> Void {
+    func invalidate() -> Void {
         os_log("MqttClient: invalidating")
         self.disconnect()
     }
@@ -392,12 +393,12 @@ extension MqttClient : CocoaMQTTDelegate {
         self.notifyEvent(eventName: "received-message", arg: event)
     }
 
-    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopic topics: [String]) {
-        os_log("MqttClient: didSubscribeTopic=%s", "\(topics)")
+    func mqtt(_ mqtt: CocoaMQTT, didSubscribeTopics success: NSDictionary, failed: [String]) {
+        os_log("MqttClient: didSubscribeTopic=%s", "\(success)")
     }
 
-    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopic topic: String) {
-        os_log("MqttClient: didUnsubscribeTopic=%s", topic)
+    func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
+        os_log("MqttClient: didUnsubscribeTopic=%s", topics)
     }
 
     func mqttDidPing(_ mqtt: CocoaMQTT) {
