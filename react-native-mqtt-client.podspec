@@ -19,5 +19,4 @@ Pod::Spec.new do |s|
 
   s.dependency "React"
   s.dependency "CocoaMQTT"
-  s.dependency "BlueECC"
 end
