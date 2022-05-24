@@ -1,7 +1,8 @@
-platform :ios, '10.0'
+platform :ios, '11.0'
 
 target 'MqttClient' do
   use_frameworks!
 
   pod 'CocoaMQTT'
+  pod 'BlueECC'
 end
