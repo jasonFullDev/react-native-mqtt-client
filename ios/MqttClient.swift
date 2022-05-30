@@ -1,5 +1,6 @@
 import CocoaMQTT
 import os
+import Security
 
 func loadX509Certificate(fromPem: String) -> SecCertificate? {
     let pemContents = fromPem
@@ -295,10 +296,11 @@ class MqttClient : RCTEventEmitter {
             kCFStreamSSLCertificates as String: certArray
         ]
         self.client!.enableSSL = true
-        self.client!.allowUntrustCACertificate = false
+        self.client!.allowUntrustCACertificate = true
         self.client!.sslSettings = sslSettings
         self.client!.keepAlive = 60
         self.client!.delegate = self
+        self.client!.logLevel = .debug
         _ = self.client!.connect()
         resolve(nil)
     }
@@ -399,6 +401,44 @@ extension MqttClient : CocoaMQTTDelegate {
 
     func mqtt(_ mqtt: CocoaMQTT, didUnsubscribeTopics topics: [String]) {
         os_log("MqttClient: didUnsubscribeTopic=%s", topics)
+    }
+
+    func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        var result: SecTrustResultType = .invalid
+
+        let queryCaCertAttrs: [String: Any] = [
+            kSecClass as String: kSecClassCertificate,
+            kSecAttrLabel as String: "arduino-ca",
+            kSecReturnRef as String: true
+        ]
+        var caCert: CFTypeRef?
+        let err = SecItemCopyMatching(queryCaCertAttrs as CFDictionary, &caCert)
+        guard err == errSecSuccess else {
+            completionHandler(false)
+            return
+        }
+        guard CFGetTypeID(caCert) == SecCertificateGetTypeID() else {
+            completionHandler(false)
+            return
+        }
+
+        SecTrustSetAnchorCertificates(trust, [caCert] as CFArray)
+
+        SecTrustSetAnchorCertificatesOnly(trust, false)
+
+        if (SecTrustEvaluate(trust, &result) != errSecSuccess) {
+            completionHandler(false)
+            return
+        }
+
+        switch result {
+        case .proceed:
+            completionHandler(true)
+        case .unspecified:
+            completionHandler(true)
+        default:
+            completionHandler(false)
+        }
     }
 
     func mqttDidPing(_ mqtt: CocoaMQTT) {
