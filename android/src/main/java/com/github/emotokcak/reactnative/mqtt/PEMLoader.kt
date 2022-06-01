@@ -51,12 +51,17 @@ object PEMLoader {
      */
     @JvmStatic
     fun loadPrivateKeyFromString(pem: String): PrivateKey {
+        val isRSA = pem.startsWith("-----BEGIN RSA PRIVATE KEY-----")
         val pemContents = pem
             .replace("-----BEGIN RSA PRIVATE KEY-----", "")
             .replace("-----END RSA PRIVATE KEY-----", "")
+            .replace("-----BEGIN EC PRIVATE KEY-----", "")
+            .replace("-----END EC PRIVATE KEY-----", "")
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
         val data = Base64.getMimeDecoder().decode(pemContents)
         val keySpec = PKCS8EncodedKeySpec(data)
-        val keyFactory = KeyFactory.getInstance("RSA")
+        val keyFactory = KeyFactory.getInstance(if (isRSA) "RSA" else "EC")
         return keyFactory.generatePrivate(keySpec)
     }
 }
