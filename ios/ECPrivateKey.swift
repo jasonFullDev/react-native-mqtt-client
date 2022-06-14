@@ -21,15 +21,15 @@ import OpenSSL
 
 
 /**
- Represents an elliptic curve private key.  
- Supported curves are:  
- - prime256v1  
- - secp384r1  
- - NID_secp521r1  
- You can generate an elliptic curve Key using OpenSSL:  
+ Represents an elliptic curve private key.
+ Supported curves are:
+ - prime256v1
+ - secp384r1
+ - NID_secp521r1
+ You can generate an elliptic curve Key using OpenSSL:
  https://wiki.openssl.org/index.php/Command_Line_Elliptic_Curve_Operations#Generating_EC_Keys_and_Parameters
- 
- ### Usage Example: 
+
+ ### Usage Example:
  ```swift
  let pemKey = """
  -----BEGIN EC PRIVATE KEY-----
@@ -46,20 +46,20 @@ import OpenSSL
 public class ECPrivateKey {
     /// A String description of the curve this key was generated from.
     public let curveId: String
-    
+
     /// The `EllipticCurve` this key was generated from.
     public let curve: EllipticCurve
-    
+
     /// The private key represented as a PEM String.
     public let pemString: String
-    
+
     #if os(Linux)
         typealias NativeKey = OpaquePointer?
         deinit { EC_KEY_free(.make(optional: self.nativeKey)) }
     #else
         typealias NativeKey = SecKey
     #endif
-    let nativeKey: NativeKey
+    public let nativeKey: SecKey?
     let pubKeyBytes: Data
     private var stripped: Bool = false
 
@@ -109,7 +109,7 @@ public class ECPrivateKey {
         }
     }
 
-    /// Initialize an ECPrivateKey from a PKCS8 `.der` file data.  
+    /// Initialize an ECPrivateKey from a PKCS8 `.der` file data.
     /// This is equivalent to a PEM String that has had the "-----BEGIN PRIVATE KEY-----"
     /// header and footer stripped and been base64 encoded to ASN1 Data.
     /// - Parameter pkcs8DER: The elliptic curve private key Data.
@@ -164,7 +164,7 @@ public class ECPrivateKey {
         self.curveId = curve.description
     }
 
-    /// Initialize an ECPrivateKey from a SEC1 `.der` file data.  
+    /// Initialize an ECPrivateKey from a SEC1 `.der` file data.
     /// This is equivalent to a PEM String that has had the "-----BEGIN EC PRIVATE KEY-----"
     /// header and footer stripped and been base64 encoded to ASN1 Data.
     /// - Parameter sec1DER: The elliptic curve private key Data.
@@ -197,7 +197,7 @@ public class ECPrivateKey {
         self.pubKeyBytes = trimmedPubBytes
         self.curveId = curve.description
     }
-    
+
     /// Initialize the `ECPublicKey`for this private key by extracting the public key bytes.
     /// - Returns: An ECPublicKey.
     /// - Throws: An ECError if the public key fails to be initialized from this private key.
@@ -234,7 +234,7 @@ public class ECPrivateKey {
         }
         return try ECPublicKey(der: keyHeader + pubBytes)
     }
-    
+
     /**
      Make an new ECPrivate key from a supported `EllipticCurve`.
      - Parameter for curve: The elliptic curve that is used to generate the key.
@@ -310,7 +310,7 @@ public class ECPrivateKey {
         #endif
         self.pemString = try ECPrivateKey.decodeToPEM(nativeKey: self.nativeKey, curve: self.curve)
     }
-    
+
     /// Decode this ECPrivateKey to it's PEM format
     private static func decodeToPEM(nativeKey: NativeKey, curve: EllipticCurve) throws -> String {
         #if os(Linux)
@@ -377,7 +377,7 @@ public class ECPrivateKey {
         let derData = ECPrivateKey.generateASN1(privateKey: privateKeyData, publicKey: publicKeyData, curve: curve)
         return ECPrivateKey.derToPrivatePEM(derData: derData)
     }
-    
+
     private static func generateASN1(privateKey: Data, publicKey: Data, curve: EllipticCurve) -> Data {
         var keyHeader: Data
         // Add the ASN1 header for the private key. The bytes have the following structure:
@@ -428,7 +428,7 @@ public class ECPrivateKey {
         }
         return keyHeader
     }
-    
+
     private static func bytesToNativeKey(privateKeyData: Data, publicKeyData: Data, curve: EllipticCurve) throws -> NativeKey {
         #if os(Linux)
             let bigNum = BN_new()
@@ -461,7 +461,7 @@ public class ECPrivateKey {
             return secKey
         #endif
     }
-    
+
     private static func derToPrivatePEM(derData: Data) -> String {
         // First convert the DER data to a base64 string...
         let base64String = derData.base64EncodedString()

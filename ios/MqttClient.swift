@@ -87,21 +87,31 @@ class MqttClient : RCTEventEmitter {
             reject("RANGE_ERROR", "invalid certificate", nil)
             return
         }
-        guard let key = loadPrivateKey(fromPem: keyPem) else {
-            reject("RANGE_ERROR", "invalid private key", nil)
-            return
+        //guard let key = loadPrivateKey(fromPem: keyPem) else {
+        //    reject("RANGE_ERROR", "invalid private key", nil)
+        //    return
+        //}
+        do {
+            guard let key = try ECPrivateKey(key: keyPem).nativeKey else {
+                reject("RANGE_ERROR", "invalid private key", nil)
+                return
+            }
+
+            // adds the private key to the keychain
+            let addKeyAttrs: [String: Any] = [
+                kSecClass as String: kSecClassKey,
+                kSecValueRef as String: key,
+                kSecAttrLabel as String: "Private key that signed an MQTT client certificate",
+                kSecAttrApplicationTag as String: keyApplicationTag
+            ]
+            let err = SecItemAdd(addKeyAttrs as CFDictionary, nil)
+            guard err == errSecSuccess || err == errSecDuplicateItem else {
+                reject("INVALID_IDENTITY", "failed to add the private key to the keychain: \(err)", nil)
+                return
+            }
         }
-        // adds the private key to the keychain
-        let addKeyAttrs: [String: Any] = [
-            kSecClass as String: kSecClassKey,
-            kSecValueRef as String: key,
-            kSecAttrLabel as String: "Private key that signed an MQTT client certificate",
-            kSecAttrApplicationTag as String: keyApplicationTag
-        ]
-        var err = SecItemAdd(addKeyAttrs as CFDictionary, nil)
-        guard err == errSecSuccess || err == errSecDuplicateItem else {
-            reject("INVALID_IDENTITY", "failed to add the private key to the keychain: \(err)", nil)
-            return
+        catch let error {
+           reject("RANGE_ERROR", error.localizedDescription, nil)
         }
         // adds the certificate to the keychain
         let addCertAttrs: [String: Any] = [
@@ -109,7 +119,7 @@ class MqttClient : RCTEventEmitter {
             kSecValueRef as String: cert,
             kSecAttrLabel as String: certLabel
         ]
-        err = SecItemAdd(addCertAttrs as CFDictionary, nil)
+        var err = SecItemAdd(addCertAttrs as CFDictionary, nil)
         guard err == errSecSuccess || err == errSecDuplicateItem else {
             reject("INVALID_IDENTITY", "failed to add the certificate to the keychain: \(err)", nil)
             return
