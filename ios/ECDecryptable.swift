@@ -24,7 +24,7 @@ import OpenSSL
 /// Extensions for encrypting, decrypting or signing `Data` using the appropriate algorithm determined by the key's curve with the provided `ECPrivateKey` or `ECPublicKey`.
 @available(macOS 10.13, iOS 11, watchOS 4.0, tvOS 11.0, *)
 extension Data {
-    
+
     /// Decrypt the encrypted data using the provided `ECPrivateKey`.
     /// The signing algorithm used is determined based on the private key's elliptic curve.
     /// - Parameter ecPrivateKey: The elliptic curve private key.
@@ -35,7 +35,7 @@ extension Data {
         // Initialize the decryption context.
         let rsaDecryptCtx = EVP_CIPHER_CTX_new()
         EVP_CIPHER_CTX_init_wrapper(rsaDecryptCtx)
-        
+
         let tagLength = 16
         let encKeyLength = key.curve.keySize
         let encryptedDataLength = Int(self.count) - encKeyLength - tagLength
@@ -82,7 +82,7 @@ extension Data {
         // The sum of processedLen is the total size of the decrypted message (decMsgLen)
         var processedLen: Int32 = 0
         var decMsgLen: Int32 = 0
-        
+
         // get aes key and iv using ANSI x9.63 Key Derivation Function
         let symKeyData = Data(bytes: symKey, count: skey_len)
         let counterData = Data([0x00, 0x00, 0x00, 0x01])
@@ -90,7 +90,7 @@ extension Data {
         let hashedKey = key.curve.digest(data: preHashKey)
         let aesKey = [UInt8](hashedKey.subdata(in: 0 ..< 16))
         let iv = [UInt8](hashedKey.subdata(in: 16 ..< 32))
-        
+
         // Set the IV length to be 16 bytes.
         // Set the envelope decryption algorithm as 128 bit AES-GCM.
         guard EVP_DecryptInit_ex(rsaDecryptCtx, EVP_aes_128_gcm(), nil, nil, nil) == 1 else {
@@ -102,12 +102,12 @@ extension Data {
         else {
             throw ECError.failedDecryptionAlgorithm
         }
-        
+
         // Set the envelope decryption context AES key and IV.
         guard EVP_DecryptInit_ex(rsaDecryptCtx, nil, nil, aesKey, iv) == 1 else {
             throw ECError.failedDecryptionAlgorithm
         }
-        
+
         // Decrypt the encrypted data using the symmetric key.
         guard encryptedData.withUnsafeBytes({ (enc: UnsafeRawBufferPointer) -> Int32 in
             return EVP_DecryptUpdate(rsaDecryptCtx, decrypted, &processedLen, enc.baseAddress?.assumingMemoryBound(to: UInt8.self), Int32(encryptedData.count))
@@ -130,7 +130,7 @@ extension Data {
         return Data(bytes: decrypted, count: Int(decMsgLen))
     #else
         var error: Unmanaged<CFError>? = nil
-        guard let eData = SecKeyCreateDecryptedData(key.nativeKey,
+        guard let eData = SecKeyCreateDecryptedData(key.nativeKey!,
                                                     key.curve.encryptionAlgorithm,
                                                     self as CFData,
                                                     &error)

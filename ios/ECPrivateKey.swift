@@ -59,7 +59,7 @@ public class ECPrivateKey {
     #else
         typealias NativeKey = SecKey
     #endif
-    public let nativeKey: SecKey?
+    public var nativeKey: SecKey?
     let pubKeyBytes: Data
     private var stripped: Bool = false
 
@@ -308,7 +308,7 @@ public class ECPrivateKey {
         self.pubKeyBytes = pubBytes as Data
         self.nativeKey = newPrivKey
         #endif
-        self.pemString = try ECPrivateKey.decodeToPEM(nativeKey: self.nativeKey, curve: self.curve)
+        self.pemString = try ECPrivateKey.decodeToPEM(nativeKey: self.nativeKey!, curve: self.curve)
     }
 
     /// Decode this ECPrivateKey to it's PEM format

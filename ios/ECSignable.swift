@@ -62,7 +62,7 @@ extension Data: ECSignable {
         guard EVP_DigestSignInit(md_ctx, nil, .make(optional: key.curve.signingAlgorithm), nil, evp_key) == 1 else {
             throw ECError.failedEvpInit
         }
-    
+
         guard self.withUnsafeBytes({ (message: UnsafeRawBufferPointer) -> Int32 in
             return EVP_DigestUpdate(md_ctx, message.baseAddress?.assumingMemoryBound(to: UInt8.self), self.count)
         }) == 1 else {
@@ -84,11 +84,11 @@ extension Data: ECSignable {
         return try ECSignature(asn1: Data(bytes: sig, count: sig_len))
     #else
         let hash = key.curve.digest(data: self)
-    
+
         // Memory storage for error from SecKeyCreateSignature
         var error: Unmanaged<CFError>? = nil
         // cfSignature is CFData that is ANS1 encoded as a sequence of two UInts (r and s)
-        guard let cfSignature = SecKeyCreateSignature(key.nativeKey,
+        guard let cfSignature = SecKeyCreateSignature(key.nativeKey!,
                                                       key.curve.signingAlgorithm,
                                                       hash as CFData,
                                                       &error)
