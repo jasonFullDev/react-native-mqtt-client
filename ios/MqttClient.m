@@ -14,7 +14,7 @@ RCT_EXTERN_METHOD(connect:(NSDictionary*)params resolve:(RCTPromiseResolveBlock)
 
 RCT_EXTERN_METHOD(disconnect)
 
-RCT_EXTERN_METHOD(publish:(NSString*)topic payload:(NSString*)payload resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
+RCT_EXTERN_METHOD(publish:(NSString*)topic payload:(NSArray*)payload resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 
 RCT_EXTERN_METHOD(subscribe:(NSString*)topic resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject)
 

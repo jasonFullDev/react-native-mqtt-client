@@ -329,14 +329,14 @@ class MqttClient : RCTEventEmitter {
     }
 
     @objc(publish:payload:resolve:reject:)
-    func publish(topic: String, payload: String, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) -> Void
+    func publish(topic: String, payload: NSArray, resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) -> Void
     {
         os_log("MqttClient: publishing to %s", topic)
         guard let client = self.client else {
             reject("NO_CONNECTION", "no MQTT connection", nil)
             return
         }
-        client.publish(CocoaMQTTMessage(topic: topic, string: payload))
+        client.publish(CocoaMQTTMessage(topic: topic, payload: payload as! [UInt8], retained: true))
         resolve(nil)
     }
 
