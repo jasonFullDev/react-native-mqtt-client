@@ -1,16 +1,7 @@
 package com.github.emotokcak.reactnative.mqtt
 
 import android.util.Log
-import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Callback
-import com.facebook.react.bridge.LifecycleEventListener
-import com.facebook.react.bridge.Promise
-import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContext
-import com.facebook.react.bridge.ReactContextBaseJavaModule
-import com.facebook.react.bridge.ReactMethod
-import com.facebook.react.bridge.ReadableMap
-import com.facebook.react.bridge.ReadableType
+import com.facebook.react.bridge.*
 import com.facebook.react.modules.core.DeviceEventManagerModule.RCTDeviceEventEmitter
 import javax.net.ssl.SSLSocketFactory
 import org.eclipse.paho.android.service.MqttAndroidClient
@@ -436,16 +427,20 @@ class RNMqttClient(reactContext: ReactApplicationContext)
      *   Resolved when publishing has finished.
      */
     @ReactMethod
-    fun publish(topic: String, payload: String, promise: Promise) {
+    fun publish(topic: String, payload: ReadableArray, promise: Promise) {
         val client = this.client
         if (client == null) {
             Log.w(NAME, "failed to publish. no MQTT connection")
             return
         }
+
         try {
-            val token = client.publish(
+          val ints = payload.toArrayList().toArray(Array<Number>(payload.size()) {v -> v.toInt()})
+          val bytes = ints.foldIndexed(ByteArray(ints.size)) { i, a, v -> a.apply { set(i, v.toByte()) } }
+
+          val token = client.publish(
                 topic,
-                payload.toByteArray(),
+                bytes,
                 1, // qos
                 false // not retained
             )
